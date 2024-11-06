@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>test-case</title>
+</head>
+<body onload="onLoad()">
+    <script>
+        async function onLoad(){
+            const iDocIndex=2101819;
+            await fetchDocumentSummary(iDocIndex);
+        }
+        async function fetchDocumentSummary(iDocIndex) {
+            
+            const sDocUrl=`https://www.lawdata.co.il/upload/psakdin/${iDocIndex}.htm`;
+            const sDocTxt = await fetchDocument(sDocUrl);
+
+            const oInputs={text:sDocTxt};
+            fetch('https://summarize-docs.shaiz2206.workers.dev/',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(oInputs)
+                }
+            )
+            .then(response => response.json())
+            .then(data => {
+                console.log(data.summary);
+            })
+            .catch(error => {
+                console.error('Error fetching the URL:', error);
+            });
+        }
+        async function fetchDocument(sUrl){
+            var sData=""
+            try{
+                const response = await fetch(sUrl);
+                const buffer = await response.arrayBuffer();
+                const decoder = new TextDecoder('windows-1255');
+                sData = decoder.decode(buffer);
+                var eContainer=document.createElement("div");
+                const bodyStart = sData.toLowerCase().indexOf('<body');
+                const bodyEnd = sData.toLowerCase().indexOf('</body>') + 7;
+                sData = sData.substring(bodyStart, bodyEnd);
+                sData = sData.replace(/<body[^>]*>/i, '').replace(/<\/body>/i, '');
+                eContainer.innerHTML=sData;
+                sData=eContainer.innerText;
+                sData=sData.replace(/\n\s+/g, '\n');
+                sData = sData.replace(/(\r|\n|\t)+/g, '\n');
+            }
+            catch(err){
+                console.log(`err in fetch document. err is ${err}`);
+                sData="";
+            }           
+            finally{
+                return sData;
+            }     
+        }   
+    </script>
+</body>
+</html>
