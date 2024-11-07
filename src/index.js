@@ -36,7 +36,7 @@ export default {
 		});
 
 		const messagesForOpenAI = [
-			{ role: 'system', content: "אתה עורך דין מומחה לענייני משפט. בשאלה הבאה אני הולך לספק לך מסמך משפטי ואתה צריך לסכם אותו בטקסט שאורכו עד 100 מילה ושתופס את התמצית של המסמך המשפטי"},
+			{ role: 'system', content: "אתה עורך דין מומחה לענייני משפט. בשאלה הבאה אני הולך לספק לך מסמך משפטי ואתה צריך לסכם אותו בטקסט שאורכו עד 100 מילה ושתופס את התמצית של המסמך המשפטי. אני מבקש שתקפיד מאוד על עברית תקנית"},
 			{ role: 'user', content: oInputs.text }
 		];
 		const chatCompletion = await oOpenAi.chat.completions.create({
