@@ -36,21 +36,20 @@ export default {
 		});
 
 		const messagesForOpenAI = [
-			{ role: 'system', content: "אתה עורך דין מומחה לענייני משפט. בשאלה הבאה אני הולך לספק לך מסמך משפטי ואתה צריך לסכם אותו בטקסט שאורכו עד 100 מילה ושתופס את התמצית של המסמך המשפטי. אני מבקש שתקפיד מאוד על עברית תקנית"},
+			{ role: 'system', content: "json  אתה תקבל מסמכים משפטיים ואתה צריך, בתור מומחה משפטי, לכתוב חוות דעת שמורכבת משלושה חלקים בפורמט ג'ייסון. החלקים הם: תמצית, תחומים והכרעה. המיפוי בגייסון הוא כדלהלן: תמצית - summary, תחומים - areas, הכרעה - resolution בחלק התמצית עליך  לכתוב תמצית של המסמך בסך של עד 200  מילים. התמצית צריכה לכלול מספר חלקים: א. המחלוקת. ב.ב טענות התביעה. ג. טענות ההגנה. ד. פסיקת השופט והסיבות לפסיקה הזו. התוצאה צריכה להיות בלי כותרת כמו 'תמצית...' החלקים השונים צריכים להיות עם כותרת החלק, למשל 'מחלוקת', 'טענות ההגנה' וכ\"ו. עם  שתי נקודות ובלי כל מיני קשקושים כמו ** תוחמים בחלק התחומים עליך לכתוב עד עשרה תחומים משפטיים שקשורים לפסק הדין, מופרדים בפסיק. בחלק ההכרעה אתה צריך לכתוב אחד משלושה ערכים: פשרה, זיכוי, הרשעה" },
 			{ role: 'user', content: oInputs.text }
 		];
 		const chatCompletion = await oOpenAi.chat.completions.create({
-			model: 'gpt-4o',
+			model: 'gpt-4o-mini',
 			messages:messagesForOpenAI,
-			temperature: 1.1,
+			temperature: 0,
 			presence_penalty: 0,
-			frequency_penalty: 0
+			frequency_penalty: 0,
+			response_format:{
+				"type":"json_object"
+			}
 		})
 
-		const oResponse={
-			summary:chatCompletion.choices[0].message.content
-		}
-
-		return new Response(JSON.stringify(oResponse),{headers:corsHeaders});
+		return new Response(JSON.stringify(chatCompletion.choices[0].message.content),{headers:corsHeaders});
 	},
 };

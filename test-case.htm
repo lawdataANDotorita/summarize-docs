@@ -3,12 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <title>test-case</title>
+    <style>
+        body{
+            direction:rtl;
+            font-family:arial;
+            font-size:1rem;
+        }
+        @keyframes retrieveSummary {
+            0% {color: #465a72;}
+            25% {color: blue;}
+            50% {color: yellow;}
+            75% {color: orange;}
+            100% {color: red;}     
+        }
+        .retSummaryInitiator{
+            color:#465a72;
+        }
+        .retSummaryInitiator:hover{
+            animation: retrieveSummary 10s;
+            animation-fill-mode:forwards;
+            cursor:pointer;
+        }
+    </style>
 </head>
 <body onload="onLoad()">
+    <div class="hdr">כותרת</div>
     <script>
         async function onLoad(){
-            const iDocIndex=2101819;
-            await fetchDocumentSummary(iDocIndex);
+//            const iDocIndex=2101819;
+  //          await fetchDocumentSummary(iDocIndex);
         }
         async function fetchDocumentSummary(iDocIndex) {
             
