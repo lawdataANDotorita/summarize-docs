@@ -25,6 +25,15 @@ export default {
 		}
 		// Check if the request body is empty
 		var oInputs={text:""};
+		var sPrompt = "json ";
+		sPrompt+="אתה תקבל מסמכים משפטיים ואתה צריך, בתור מומחה משפטי, לכתוב חוות דעת שמורכבת משני חלקים בפורמט ג'ייסון";
+		sPrompt+="החלקים הם תמצית ותחומים. המיפוי לג'ייסון הוא כדלהלן: תמצית - summary, תחומים - areas";
+		sPrompt+="בחלק התמצית עליך לכתוב תמצית של המסמך, עד 400 מילים, תוך שימוש במונחים משפטיים. התמצית צריכה לכלול 4 חלקים: ";
+		sPrompt+="1. first - תיאור העניין המשפטי של המסמך";
+		sPrompt+="2. second - תיאור העובדות המרכזיות של המסמך";
+		sPrompt+="3. third - תיאור הטענות המרכזיות של המסמך";
+		sPrompt+="4. fourth - החלטת השופט והסיבות שהובילו אותו להחלטה זו. אנא השתמש במונחים משפטיים";
+		sPrompt+="בחלק התחומים עליך לכתוב את התחומים המשפטיים שקשורם למסמך, עד עשרה תחומים ועם פסיק שמפריד ביניהם";
 		const contentLength = request.headers.get('content-length');
 		if (contentLength && parseInt(contentLength) >0) {
 			oInputs = !!request ? await request.json() : {text:""};
@@ -32,11 +41,11 @@ export default {
 
 		const oOpenAi = new OpenAI({
 			apiKey:env.OPENAI_API_KEY,
-			baseURL:"https://gateway.ai.cloudflare.com/v1/1719b913db6cbf5b9e3267b924244e58/query_db_gateway/openai"
+			baseURL:"https://gateway.ai.cloudflare.com/v1/1719b913db6cbf5b9e3267b924244e58/summarize-docs/openai"
 		});
 
 		const messagesForOpenAI = [
-			{ role: 'system', content: "json  אתה תקבל מסמכים משפטיים ואתה צריך, בתור מומחה משפטי, לכתוב חוות דעת שמורכבת משלושה חלקים בפורמט ג'ייסון. החלקים הם: תמצית, תחומים והכרעה. המיפוי בגייסון הוא כדלהלן: תמצית - summary, תחומים - areas, הכרעה - resolution בחלק התמצית עליך  לכתוב תמצית של המסמך בסך של עד 200  מילים. התמצית צריכה לכלול מספר חלקים: א. המחלוקת. ב.ב טענות התביעה. ג. טענות ההגנה. ד. פסיקת השופט והסיבות לפסיקה הזו. התוצאה צריכה להיות בלי כותרת כמו 'תמצית...' החלקים השונים צריכים להיות עם כותרת החלק, למשל 'מחלוקת', 'טענות ההגנה' וכ\"ו. עם  שתי נקודות ובלי כל מיני קשקושים כמו ** תוחמים בחלק התחומים עליך לכתוב עד עשרה תחומים משפטיים שקשורים לפסק הדין, מופרדים בפסיק. בחלק ההכרעה אתה צריך לכתוב אחד משלושה ערכים: פשרה, זיכוי, הרשעה" },
+			{ role: 'system', content: sPrompt },
 			{ role: 'user', content: oInputs.text }
 		];
 		const chatCompletion = await oOpenAi.chat.completions.create({
