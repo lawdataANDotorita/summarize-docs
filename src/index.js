@@ -53,7 +53,8 @@ export default {
 			{ role: 'system', content: sPrompt.trim() },
 			{ role: 'user', content: oInputs.text }
 		];
-
+		const bufferThreshold = 10;
+		let buffer = "";
 		const encoder = new TextEncoder();
 		const stream = new ReadableStream({
 			async start(controller) {
@@ -69,7 +70,14 @@ export default {
 
 					for await (const chunk of chatCompletion) {
 						const content = chunk?.choices?.[0]?.delta?.content || '';
-						controller.enqueue(encoder.encode(content));
+						buffer += content;
+						if (buffer.length >= bufferThreshold) {
+							controller.enqueue(encoder.encode(buffer));
+							buffer = '';
+						}
+					}
+					if (buffer.length > 0) {
+						controller.enqueue(encoder.encode(buffer));
 					}
 					controller.close();
 				} catch (error) {
