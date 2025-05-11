@@ -9,6 +9,8 @@
  */
 
 import OpenAI from "openai";
+import { createClient } from "@supabase/supabase-js";
+
 
 const corsHeaders = {
 	'Access-Control-Allow-Origin': '*',
@@ -32,16 +34,20 @@ export default {
 		}
 
 		const sPrompt = `
-			אתה תקבל מסמכים משפטיים ואתה צריך, בתור מומחה משפטי, לכתוב חוות דעת שמורכבת משני חלקים.
-			אנא כתוב את הטקסט בלבד בלי הוספה של כל מיני קישוטים כמו ### וכדומה.
-			החלקים הם תמצית ותגיות.
-			הכותרות צריכות להיות *1*תמצית*1* ו *1*תגיות*1*
-			בחלק התמצית עליך לכתוב תמצית של המסמך, עד 400 מילים, תוך שימוש במונחים משפטיים. התמצית צריכה לכלול 4 חלקים: 
-			1. תיאור העניין המשפטי של המסמך. הכותרת היא *2*מהות ההליך*2*
-			2. תיאור העובדות המרכזיות של המסמך. הכותרת היא *2*עובדות מרכזיות*2*
-			3. תיאור הטענות המרכזיות של המסמך. הכותרת היא *2*טענות מרכזיות*2*
-			4. החלטת השופט והסיבות שהובילו אותו להחלטה זו. הכותרת היא *2*החלטה שיפוטית*2*. אנא השתמש במונחים משפטיים
-			בחלק התגיות עליך לכתוב את התגיות המשפטיות שקשורים למסמך, עד עשר תגיות ועם פסיק שמפריד ביניהם
+
+אתה תקבל מסמכים משפטיים ואתה צריך, בתור מומחה משפטי, לכתוב חוות דעת שמורכבת משני חלקים.
+אנא כתוב את הטקסט בלבד בלי הוספה של כל מיני קישוטים כמו ### וכדומה.
+החלקים הם תמצית ותחומים.
+הכותרות צריכות להיות *1*תמצית*1* ו *1*תחומים*1*
+בחלק התמצית עליך לכתוב תמצית של המסמך, עד 400 מילים, תוך שימוש במונחים משפטיים. התמצית צריכה לכלול 4 חלקים: 
+1. תיאור העניין המשפטי של המסמך. הכותרת היא *2*מהות ההליך*2*
+2. תיאור העובדות המרכזיות של המסמך. הכותרת היא *2*עובדות מרכזיות*2*
+3. תיאור הטענות המרכזיות של המסמך. הכותרת היא *2*טענות מרכזיות*2*
+4. החלטת השופט והסיבות שהובילו אותו להחלטה זו. הכותרת היא *2*החלטה שיפוטית*2*. אנא השתמש במונחים משפטיים
+את חלק התחומים השאר ריק
+
+			המסמך הוא:
+			${oInputs.text}
 		`;
 
 		const oOpenAi = new OpenAI({
@@ -55,6 +61,8 @@ export default {
 		];
 		const bufferThreshold = 10;
 		let buffer = "";
+		let summary = "";
+		let response;
 		const encoder = new TextEncoder();
 		const stream = new ReadableStream({
 			async start(controller) {
@@ -70,6 +78,7 @@ export default {
 
 					for await (const chunk of chatCompletion) {
 						const content = chunk?.choices?.[0]?.delta?.content || '';
+						summary += content;
 						buffer += content;
 						if (buffer.length >= bufferThreshold) {
 							controller.enqueue(encoder.encode(buffer));
@@ -79,6 +88,46 @@ export default {
 					if (buffer.length > 0) {
 						controller.enqueue(encoder.encode(buffer));
 					}
+
+					let additionalText = "";
+
+					try {
+						response = await oOpenAi.embeddings.create({
+						model: "text-embedding-3-large",
+						input: summary,
+						dimensions: 1536,
+					  });
+					  let oVector = response.data[0].embedding;
+
+					  const privateKey = env.SUPABASE_API_KEY;
+					  if (!privateKey) throw new Error(`Expected env var SUPABASE_API_KEY`);
+					  const url = env.SUPABASE_URL;
+			  
+					  if (!url) throw new Error(`Expected env var SUPABASE_URL`);
+					  const supabase = createClient(url, privateKey);
+
+					  
+
+					const { data,error } = await supabase.rpc('match_documents_test', {
+							query_embedding: oVector,
+							match_threshold: 0.5,
+							match_count: 10,
+					});
+			
+					if (data) {
+						additionalText = data.map(item => item.content).join('<br>')
+					}
+					else {
+						additionalText = "didn't find any subjects ";
+					}
+			
+				  } 
+				  catch (error) {
+					  additionalText = "Error generating embedding. error is "+error;
+				  }
+		  
+					controller.enqueue(encoder.encode(additionalText));
+					
 					controller.close();
 				} catch (error) {
 					console.error("Error during OpenAI streaming:", error);
