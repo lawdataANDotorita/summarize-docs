@@ -44,7 +44,19 @@ export default {
 2. תיאור העובדות המרכזיות של המסמך. הכותרת היא *2*עובדות מרכזיות*2*
 3. תיאור הטענות המרכזיות של המסמך. הכותרת היא *2*טענות מרכזיות*2*
 4. החלטת השופט והסיבות שהובילו אותו להחלטה זו. הכותרת היא *2*החלטה שיפוטית*2*. אנא השתמש במונחים משפטיים
-את חלק התחומים השאר ריק
+בחלק התחומים עליך לבחור 20 שורות של תחומים, כל שורה מכילה שלושה אלמנטים:
+1. תחום עיקרי
+2. תת תחום
+3. תת תת תחום
+הפורמט צריך להיות בשורה אחת כלהלן:
+תחום > תת תחום > תת תת תחום
+בסיום ובתחילת כל שורה צרף את המחרוזת : *3*
+
+למשל:
+נזיקין > נזק ראייתי > נטל ההוכחה
+תקשורת > רשות השידור > תחולת כללי משפט מנהלי
+אגודות שיתופיות > בוררות > ביטול פסק חריגה מסמכות
+
 
 			המסמך הוא:
 			${oInputs.text}
@@ -88,46 +100,6 @@ export default {
 					if (buffer.length > 0) {
 						controller.enqueue(encoder.encode(buffer));
 					}
-
-					let additionalText = "";
-
-					try {
-						response = await oOpenAi.embeddings.create({
-						model: "text-embedding-3-large",
-						input: summary,
-						dimensions: 1536,
-					  });
-					  let oVector = response.data[0].embedding;
-
-					  const privateKey = env.SUPABASE_API_KEY;
-					  if (!privateKey) throw new Error(`Expected env var SUPABASE_API_KEY`);
-					  const url = env.SUPABASE_URL;
-			  
-					  if (!url) throw new Error(`Expected env var SUPABASE_URL`);
-					  const supabase = createClient(url, privateKey);
-
-					  
-
-					const { data,error } = await supabase.rpc('match_documents_test', {
-							query_embedding: oVector,
-							match_threshold: 0.5,
-							match_count: 10,
-					});
-			
-					if (data) {
-						additionalText = data.map(item => item.content).join('<br>')
-					}
-					else {
-						additionalText = "didn't find any subjects ";
-					}
-			
-				  } 
-				  catch (error) {
-					  additionalText = "Error generating embedding. error is "+error;
-				  }
-		  
-					controller.enqueue(encoder.encode(additionalText));
-					
 					controller.close();
 				} catch (error) {
 					console.error("Error during OpenAI streaming:", error);
