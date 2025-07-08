@@ -86,6 +86,50 @@ export default {
 			oInputs = await request.json();
 		}
 
+		const sAIToken = oInputs.aiToken;
+		
+		// Check if token exists
+		if (!sAIToken) {
+			return new Response('Error: Missing AI token', { 
+				status: 400,
+				headers: { 
+					'Content-Type': 'text/plain',
+					'Access-Control-Allow-Origin': actualOrigin
+				}
+			});
+		}
+
+		try {
+			const tokenValidationResponse = await fetch(`https://www.lawdata.co.il/isAITokenValid.asp?aiToken=${sAIToken}`);
+			const tokenValidationResult = await tokenValidationResponse.text();
+			
+			if (tokenValidationResult.trim() === '0') {
+				return new Response('Error: Cannot make AI requests - invalid token', { 
+					status: 403,
+					headers: { 
+						'Content-Type': 'text/plain',
+						'Access-Control-Allow-Origin': actualOrigin
+					}
+				});
+			} else if (tokenValidationResult.trim() !== '1') {
+				return new Response('Error: Invalid token validation response', { 
+					status: 500,
+					headers: { 
+						'Content-Type': 'text/plain',
+						'Access-Control-Allow-Origin': actualOrigin
+					}
+				});
+			}
+		} catch (error) {
+			return new Response('Error: Failed to validate AI token', { 
+				status: 500,
+				headers: { 
+					'Content-Type': 'text/plain',
+					'Access-Control-Allow-Origin': actualOrigin
+				}
+			});
+		}
+
 		const sPrompt = `
 
 אתה תקבל מסמכים משפטיים ואתה צריך, בתור מומחה משפטי, לכתוב חוות דעת שמורכבת משני חלקים.
